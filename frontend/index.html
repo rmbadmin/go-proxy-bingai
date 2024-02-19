@@ -14,25 +14,28 @@
   <meta name="referrer" content="origin-when-cross-origin" />
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>BingAI - 聊天</title>
-  <!-- <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
-  <script>
-    var vConsole = new window.VConsole();
-  </script> -->
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-MM5J5X8QQC"></script>
+  <!-- Google tag Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZVJCFLBFRZ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag () { dataLayer.push(arguments); }
+    function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
-    gtag('config', 'G-MM5J5X8QQC');
+    gtag('config', 'G-ZVJCFLBFRZ');
+  </script>
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "kw2cze8oin");
   </script>
   <!-- 百度统计 -->
   <script>
     var _hmt = _hmt || [];
     (function () {
       var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?299c614daa53fbcede70f2d22df0a31b";
+      hm.src = "https://hm.baidu.com/hm.js?6002068077c49f5ff6fa1c10d4ae55dc";
       var s = document.getElementsByTagName("script")[0];
       s.parentNode.insertBefore(hm, s);
     })();
@@ -40,13 +43,35 @@
   <script src="/js/bing/chat/global.js"></script>
   <script src="/js/bing/chat/amd.js"></script>
   <script src="/js/bing/chat/config.js"></script>
+  <style type="text/css">@import "/css/bing.css";</style>
 </head>
 
 <body>
+  <script type="importmap">
+    {
+      "imports": {
+        "rms-answers-SharedStaticAssets-mdast-util-from-markdown": "/rp/4XuwXtSbiAVqhJs_4Ciwl3YcLrM.br.js",
+        "rms-answers-SharedStaticAssets-mdast-util-gfm-table": "/rp/ztanaSb3HsieCWGjv3Tl3lECB88.br.js",
+        "rms-answers-SharedStaticAssets-micromark-extension-gfm-table": "/rp/u4lHTqMyPv8KR3P-2buvasHaSoM.br.js",
+        "rms-answers-SharedStaticAssets-markdown-it": "/rp/7KdbPOT7wEH4JWaJqBx9wrxcwuM.br.js",
+        "rms-answers-SharedStaticAssets-katex": "/rp/yscqUoVr2GlqZlY4gxmNnR5oVBA.br.js",
+        "rms-answers-SharedStaticAssets-docx": "/rp/7O6toTbIT9CUxT9Lujfh9KGnKPg.br.js",
+        "rms-answers-SharedStaticAssets-xlsx": "/rp/QClZgEttYMm4ob59daALw3CJwco.br.js"
+      }
+    }
+  </script>
   <div id="b_sydHeadBg"></div>
-  <div id="b_sydConvCont" _iid="SERP.5029">
+  <div id="b_sydConvCont" _iid="SERP.5028">
     <div id="b_sydtoporpole" class="b_sydConvAnsTest"></div>
     <div id="b_sydBgCover"></div>
+  </div>
+  <div id="sydWelcomeTemplate">
+    <div id="b_sydWelcomeTemplate" class="b_wlcmCont" data-priority="2" style="margin-top: 66px;">
+      <div class="b_wlcmHdr"><div class="b_wlcmLogo"></div>
+      <div class="b_wlcmDesc">必应是由 AI 支持的 Web Copilot</div>
+    </div>
+    <div class="b_wlcmTileCont b_wlcmTileContConsumer"></div>
+    <div class="b_ziTileCont b_wlcmCont"></div>
   </div>
   <script src="/js/bing/chat/core.js"></script>
   <script src="/js/bing/chat/lib.js"></script>

@@ -2,32 +2,50 @@ package main
 
 import (
 	"adams549659584/go-proxy-bingai/api"
+	v1 "adams549659584/go-proxy-bingai/api/v1"
+	"adams549659584/go-proxy-bingai/common"
+	"adams549659584/go-proxy-bingai/web"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
 func main() {
-	http.HandleFunc("/sysconf", api.SysConf)
+	http.HandleFunc("/v1/chat/completions", api.Middleware(v1.ChatHandler))
+	http.HandleFunc("/v1/images/generations", api.Middleware(v1.ImageHandler))
+	http.HandleFunc("/v1/models/", api.Middleware(v1.ModelHandler))
+	http.HandleFunc("/v1/models", api.Middleware(v1.ModelsHandler))
+	http.HandleFunc("/api/v1/chat/completions", api.Middleware(v1.ChatHandler))
+	http.HandleFunc("/api/v1/images/generations", api.Middleware(v1.ImageHandler))
+	http.HandleFunc("/api/v1/models/", api.Middleware(v1.ModelHandler))
+	http.HandleFunc("/api/v1/models", api.Middleware(v1.ModelsHandler))
 
-	http.HandleFunc("/sydney/", api.Sydney)
+	http.HandleFunc("/sysconf", api.Middleware(api.SysConf))
 
-	http.HandleFunc("/web/", api.WebStatic)
+	http.HandleFunc("/pass", api.Middleware(api.BypassHandler))
+	http.HandleFunc("/turing/captcha/challenge", api.Middleware(api.ChallengeHandler))
+	http.HandleFunc("/challenge/verify", api.Middleware(api.VerifyHandler))
+
+	http.HandleFunc("/designer/", api.Middleware(api.Designer))
+
+	http.HandleFunc("/edgesvc/", api.Middleware(api.Edgesvc))
+	http.HandleFunc("/sydney/", api.Middleware(api.Sydney))
+
+	if common.IS_DEBUG_MODE {
+		http.HandleFunc("/web/", web.DebugWebHandler)
+	} else {
+		http.HandleFunc("/web/", api.WebStatic)
+	}
 
 	http.HandleFunc("/", api.Index)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	addr := ":" + port
+	addr := ":" + common.PORT
 
 	log.Println("Starting BingAI Proxy At " + addr)
 
 	srv := &http.Server{
 		Addr:         addr,
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 5 * time.Minute,
 		ReadTimeout:  15 * time.Second,
 	}
 	log.Fatal(srv.ListenAndServe())

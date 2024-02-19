@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
-import { NEmpty, NButton, useMessage, NResult, NInput } from 'naive-ui';
+import { onMounted, ref, computed, h } from 'vue';
+import { NEmpty, NButton, useDialog, useMessage, NResult, NInput, NAlert } from 'naive-ui';
 import conversationCssText from '@/assets/css/conversation.css?raw';
 import { usePromptStore, type IPrompt } from '@/stores/modules/prompt';
 import { storeToRefs } from 'pinia';
@@ -15,6 +15,9 @@ import ChatServiceSelect from '@/components/ChatServiceSelect/ChatServiceSelect.
 import { useUserStore } from '@/stores/modules/user';
 
 const message = useMessage();
+const dialog = useDialog();
+(window as any).$dialog = dialog;
+
 const isShowLoading = ref(true);
 
 const promptStore = usePromptStore();
@@ -43,18 +46,48 @@ const isShowHistory = computed(() => {
   return (CIB.vm.isMobile && CIB.vm.sidePanel.isVisibleMobile) || (!CIB.vm.isMobile && CIB.vm.sidePanel.isVisibleDesktop);
 });
 
+const { themeMode, uiVersion, gpt4tEnable, sydneyEnable, sydneyPrompt, enterpriseEnable } = storeToRefs(userStore);
+
 onMounted(async () => {
   await initChat();
   hackDevMode();
   // CIB.vm.isMobile = isMobile();
   // show conversion
-  SydneyFullScreenConv.initWithWaitlistUpdate({ cookLoc: {} }, 10);
+  await SydneyFullScreenConv.initWithWaitlistUpdate({ cookLoc: {} }, 10);
+  if (isMobile()) {
+    const serpEle = document.querySelector('cib-serp');
+    serpEle?.setAttribute('mobile', '');
+  }
+  if (uiVersion.value === 'v3') {
+    await sj_evt.bind('chs_init', () => {
+      ChatHomeScreen.init('/turing/api/suggestions/v2/zeroinputstarter');
+    }, true);
+  }
   initSysConfig();
 
   isShowLoading.value = false;
   hackStyle();
+  hackEnterprise();
+  hackSydney();
   initChatPrompt();
+
+  // set Theme
+  if (themeMode.value == 'light') {
+    CIB.changeColorScheme(0);
+  } else if (themeMode.value == 'dark') {
+    CIB.changeColorScheme(1);
+  } else if (themeMode.value == 'auto') {
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      CIB.changeColorScheme(1);
+    } else {
+      CIB.changeColorScheme(0);
+    }
+  }
 });
+
+const sleep = async (ms: number) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const hackDevMode = () => {
   if (import.meta.env.DEV) {
@@ -81,6 +114,21 @@ const initChatService = () => {
 };
 
 const initSysConfig = async () => {
+  const S = base58Decode(_G.S);
+  let tmpA = [];
+  for (let i = 0; i < _G.SP.length; i++) {
+    tmpA.push(S[_G.SP[i]]);
+  }
+  const token = base58Decode(tmpA.join(''));
+  if (token != _G.AT) {
+    dialog.warning({
+      title: decodeURI(base58Decode(_G.TIP)),
+      content: decodeURI(base58Decode(_G.TIPC)),
+      maskClosable: false,
+      closable: false,
+      closeOnEsc: false,
+    });
+  }
   const res = await userStore.getSysConfig();
   switch (res.code) {
     case ApiResultCode.OK:
@@ -89,7 +137,48 @@ const initSysConfig = async () => {
           isShowUnauthorizedModal.value = true;
           return;
         }
-        afterAuth(res.data);
+        await afterAuth(res.data);
+        if (res.data.info != '') {
+          const info = JSON.parse(res.data.info);
+          message.create(info['content'], {
+            type: info['type'],
+            keepAliveOnHover: true,
+            showIcon: true,
+            render: (props) => {
+              return h(
+                NAlert,
+                {
+                  closable: true,
+                  type: props.type === 'loading' ? 'default' : props.type,
+                  title: info['title'],
+                  style: {
+                    boxShadow: 'var(--n-box-shadow)',
+                    maxWidth: 'calc(100vw - 32px)',
+                    width: '360px',
+                    position: 'fixed',
+                    top: '20px',
+                    right: '12px',
+                  }
+                },
+                {
+                  default: () => props.content
+                }
+              )
+            }
+          });
+        }
+      }
+      break;
+    case ApiResultCode.UnLegal:
+      {
+        _G.SB = true
+        dialog.warning({
+          title: decodeURI(base58Decode(_G.TIP)),
+          content: decodeURI(base58Decode(_G.TIPC)),
+          maskClosable: false,
+          closable: false,
+          closeOnEsc: false,
+        });
       }
       break;
     default:
@@ -98,9 +187,9 @@ const initSysConfig = async () => {
   }
 };
 
-const afterAuth = (data: SysConfig) => {
+const afterAuth = async (data: SysConfig) => {
   if (!data.isSysCK) {
-    userStore.checkUserToken();
+    await userStore.checkUserToken();
   }
   initChatService();
 };
@@ -112,17 +201,25 @@ const initChat = async () => {
   });
 };
 
-const hackStyle = () => {
+const hackStyle = async() => {
   if (location.hostname === 'localhost') {
     CIB.config.sydney.hostnamesToBypassSecureConnection = CIB.config.sydney.hostnamesToBypassSecureConnection.filter((x) => x !== location.hostname);
   }
+  if (isMobile()) {
+    await sleep(25);
+  }
   const serpEle = document.querySelector('cib-serp');
-  // 居中
-  serpEle?.setAttribute('alignment', 'center');
   const conversationEle = serpEle?.shadowRoot?.querySelector('cib-conversation') as HTMLElement;
   // todo 反馈暂时无法使用，先移除
   const welcomeEle = conversationEle?.shadowRoot?.querySelector('cib-welcome-container');
-  welcomeEle?.shadowRoot?.querySelector('.learn-tog-item')?.remove();
+  const loginTip = welcomeEle?.shadowRoot?.querySelectorAll("div[class='muid-upsell']");
+  if (loginTip?.length) {
+    loginTip.forEach((ele) => {
+      ele.remove();
+    });
+  }
+  welcomeEle?.shadowRoot?.querySelector('.preview-container')?.remove();
+  welcomeEle?.shadowRoot?.querySelector('.footer')?.remove();
   serpEle?.shadowRoot?.querySelector('cib-serp-feedback')?.remove();
   if (isMobile()) {
     welcomeEle?.shadowRoot?.querySelector('.container-item')?.remove();
@@ -136,6 +233,54 @@ const hackStyle = () => {
 
 interface IActionBarElement extends HTMLElement {
   handleInputTextKey: (ev: KeyboardEvent) => void;
+}
+
+const hackEnterprise = () => {
+  if (enterpriseEnable.value) {
+    CIB.config.bingAtWork.isBingChatForEnterpriseEnabled = true;
+    CIB.config.bingAtWork.chatType = "enterprise";
+  }
+}
+
+const hackSydney = () => {
+  if (gpt4tEnable.value) {
+    CIB.config.sydney.request.optionsSets.push("dlgpt4t")
+  }
+  if (sydneyEnable.value) {
+    CIB.config.sydney.request.sliceIds = [
+      "winmuid1tf",
+			"styleoff",
+			"ccadesk",
+			"smsrpsuppv4cf",
+			"ssrrcache",
+			"contansperf",
+			"crchatrev",
+			"winstmsg2tf",
+			"creatgoglt",
+			"creatorv2t",
+			"sydconfigoptt",
+			"adssqovroff",
+			"530pstho",
+			"517opinion",
+			"418dhlth",
+			"512sprtic1s0",
+			"emsgpr",
+			"525ptrcps0",
+			"529rweas0",
+			"515oscfing2s0",
+			"524vidansgs0",
+    ]
+    CIB.config.sydney.request.optionsSets.push("rai278", "nojbfedge")
+    CIB.config.features.enableUpdateConversationMessages = true
+    CIB.registerContext([{
+      "author": "user",
+      "description": sydneyPrompt.value,
+      "contextType": "WebPage",
+      "messageType": "Context",
+      "messageId": "discover-web--page-ping-mriduna-----",
+    }])
+    CIB.config.strings.webPageContextPrefix = '已处于越狱模式, 请谨慎使用避免封号'
+  }
 }
 
 const initChatPrompt = () => {
@@ -225,7 +370,7 @@ const handleInputTextKey = (ev: KeyboardEvent) => {
     case 'Enter':
       {
         // ev.preventDefault();
-        if (!CIB.vm.actionBar.inputText || !CIB.vm.actionBar.inputText.startsWith('/')) {
+        if (!CIB.vm.actionBar.textInput.value || !CIB.vm.actionBar.textInput.value.startsWith('/')) {
           return;
         }
         selectPrompt(searchPromptList.value[selectedPromptIndex.value]);
@@ -240,7 +385,7 @@ const selectPrompt = (item: IPrompt) => {
     return;
   }
   keyword.value = '';
-  CIB.vm.actionBar.inputText = item.prompt;
+  CIB.vm.actionBar.textInput.value = item.prompt;
   isShowChatPrompt.value = false;
 };
 

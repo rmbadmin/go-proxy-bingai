@@ -5,6 +5,25 @@ declare const sj_evt: {
 declare const SydneyFullScreenConv: {
   initWithWaitlistUpdate: (n: object, t: number) => void;
 };
+declare const ChatHomeScreen: {
+  init: (n: string) => void;
+};
+
+declare const _G: {
+  IG: string;
+  S: string;
+  SP: Array<number>;
+  TIP: string;
+  TIPC: string;
+  TP: string;
+  SB: boolean;
+  AT: string;
+}
+
+declare const base58Encode: (n: string) => string;
+declare const base58Decode: (n: string) => string;
+declare const aesEncrypt: (n: string, t: string) => string;
+declare const aesDecrypt: (n: string, t: string) => string;
 
 /**
  * 更有创造力 | 更平衡 | 更精确
@@ -116,6 +135,7 @@ interface BingConversation {
   conversationType: string;
   hashedSignature: string;
   id: string;
+  convId: string;
   isExpired: boolean;
   messages: TextMessageModel[];
   state: string;
@@ -155,7 +175,9 @@ declare const CIB: {
       /**
        * 输入框文本 赋值即输入问题
        */
-      inputText: string;
+      textInput: {
+        value: string;
+      };
       /**
        * 自动建议的前置文本
        */
@@ -182,6 +204,17 @@ declare const CIB: {
        * PC 是否显示  get shouldShowPanel
        */
       isVisibleDesktop: boolean;
+      /**
+       * 面板类型
+       */
+      panels: {
+        type: string;
+        label: string;
+      }[];
+      /**
+       * 选择的面板 threads / plugins
+       */
+      selectedPanel: string;
     };
     /**
      * 选择对话样式
@@ -194,7 +227,24 @@ declare const CIB: {
     };
   };
   config: {
+    answers: {
+      baseUrl: string;
+      secondTurnScreenshotBaseUrl: string;
+    };
     bing: {
+      baseUrl: string;
+      signIn: {
+        baseUrl: string;
+      };
+    };
+    bingAtWork: {
+      isBingChatForEnterpriseEnabled: boolean;
+      chatType: string;
+    }
+    captcha: {
+      baseUrl: string;
+    }
+    contentCreator: {
       baseUrl: string;
     };
     edgeAction: {
@@ -210,6 +260,11 @@ declare const CIB: {
        * 获取聊天历史
        */
       enableGetChats: boolean;
+      // 允许从页面获取内容
+      enableUpdateConversationMessages: boolean;
+    };
+    suggestionsv2: {
+      baseUrl: string;
     };
     sydney: {
       baseUrl: string;
@@ -218,6 +273,10 @@ declare const CIB: {
        */
       hostnamesToBypassSecureConnection: string[];
       expiryInMinutes: number;
+      request: {
+        sliceIds: string[];
+        optionsSets: string[];
+      }
     };
     messaging: {
       /**
@@ -229,6 +288,12 @@ declare const CIB: {
        */
       messageBufferWorkerStreamDelayMS: number;
     };
+    visualSearch: {
+      baseUrl: string;
+    }
+    strings: {
+        webPageContextPrefix: string;
+    }
   };
   manager: {
     chat: BingChat;
@@ -271,4 +336,9 @@ declare const CIB: {
   onWorkToggleChanged: PublicSubscribeEvent;
 
   responseTone: ToneType;
+
+  changeColorScheme: (O: 0 | 1) => {};
+  registerContext: (O) => {};
+  showConversation: () => {};
+  showNotebook: () => {};
 };
